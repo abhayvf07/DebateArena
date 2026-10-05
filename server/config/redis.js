@@ -69,6 +69,7 @@ const deleteCache = async (key) => {
 };
 
 // Delete all keys matching a wildcard pattern (e.g. "debates:*")
+// Uses SCAN (not KEYS) to avoid blocking Redis, and pipelines batch deletes
 async function deleteCachePattern(pattern) {
   if (!client) return;
   try {
@@ -79,7 +80,9 @@ async function deleteCachePattern(pattern) {
 
     for await (const keys of stream) {
       if (keys.length) {
-        await client.del(keys);
+        const pipeline = client.pipeline();
+        keys.forEach((key) => pipeline.del(key));
+        await pipeline.exec();
       }
     }
   } catch (err) {

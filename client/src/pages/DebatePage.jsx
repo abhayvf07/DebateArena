@@ -56,39 +56,55 @@ export default function DebatePage() {
     socket.on("argumentAdded", (newArgument) => {
       if (newArgument.author?._id === user?._id) return;
 
-      queryClient.setQueryData(["arguments", id], (old) => {
-        if (!old) return old;
-        if (!newArgument.parentId) {
-          return {
-            ...old,
-            arguments: [newArgument, ...old.arguments],
-          };
-        }
-        const newArgs = old.arguments.map((arg) => {
-          if (arg._id === newArgument.parentId) {
-            return { ...arg, replies: [...(arg.replies || []), newArgument] };
+      // Use setQueriesData with a predicate to match ["arguments", id, <any page>]
+      queryClient.setQueriesData(
+        {
+          predicate: (query) =>
+            query.queryKey[0] === "arguments" && query.queryKey[1] === id,
+        },
+        (old) => {
+          if (!old) return old;
+          if (!newArgument.parentId) {
+            return {
+              ...old,
+              arguments: [newArgument, ...old.arguments],
+            };
           }
-          return arg;
-        });
-        return { ...old, arguments: newArgs };
-      });
+          const newArgs = old.arguments.map((arg) => {
+            if (arg._id === newArgument.parentId) {
+              return { ...arg, replies: [...(arg.replies || []), newArgument] };
+            }
+            return arg;
+          });
+          return { ...old, arguments: newArgs };
+        },
+      );
     });
 
     socket.on("argumentDeleted", ({ argumentId }) => {
-      queryClient.setQueryData(["arguments", id], (old) => {
-        if (!old) return old;
-        // Remove if top-level
-        const filtered = old.arguments.filter((arg) => arg._id !== argumentId);
-        // Remove if nested reply inside a parent
-        const cleaned = filtered.map((arg) => {
-          if (!arg.replies?.length) return arg;
-          return {
-            ...arg,
-            replies: arg.replies.filter((r) => r._id !== argumentId),
-          };
-        });
-        return { ...old, arguments: cleaned };
-      });
+      // Use setQueriesData with a predicate to match ["arguments", id, <any page>]
+      queryClient.setQueriesData(
+        {
+          predicate: (query) =>
+            query.queryKey[0] === "arguments" && query.queryKey[1] === id,
+        },
+        (old) => {
+          if (!old) return old;
+          // Remove if top-level
+          const filtered = old.arguments.filter(
+            (arg) => arg._id !== argumentId,
+          );
+          // Remove if nested reply inside a parent
+          const cleaned = filtered.map((arg) => {
+            if (!arg.replies?.length) return arg;
+            return {
+              ...arg,
+              replies: arg.replies.filter((r) => r._id !== argumentId),
+            };
+          });
+          return { ...old, arguments: cleaned };
+        },
+      );
     });
 
     return () => {
@@ -126,7 +142,7 @@ export default function DebatePage() {
     onSuccess: () => {
       setNewArg({ text: "", side: "Pro" });
       toast.success("Argument posted!");
-      queryClient.invalidateQueries(["arguments", id]);
+      queryClient.invalidateQueries({ queryKey: ["arguments", id] });
     },
     onError: (err) => {
       const msg = err.response?.data?.message || "Failed to post argument";
@@ -164,7 +180,7 @@ export default function DebatePage() {
     onSuccess: (res) => {
       toast.success(res.data.liked ? "❤️ Liked!" : "Unliked");
       if (res.data.alert) toast(res.data.alert);
-      queryClient.invalidateQueries(["arguments", id]);
+      queryClient.invalidateQueries({ queryKey: ["arguments", id] });
     },
     onError: (err) => {
       const msg =
@@ -553,7 +569,7 @@ export default function DebatePage() {
                   liked={!!userLikes[arg._id]}
                   onLike={handleLike}
                   onReplyAdded={() =>
-                    queryClient.invalidateQueries(["arguments", id])
+                    queryClient.invalidateQueries({ queryKey: ["arguments", id] })
                   }
                 />
               ))
@@ -586,7 +602,7 @@ export default function DebatePage() {
                   liked={!!userLikes[arg._id]}
                   onLike={handleLike}
                   onReplyAdded={() =>
-                    queryClient.invalidateQueries(["arguments", id])
+                    queryClient.invalidateQueries({ queryKey: ["arguments", id] })
                   }
                 />
               ))

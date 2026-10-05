@@ -1,4 +1,4 @@
-# Internet Debate Arena
+# Internet Debate Arena (DebateHub)
 
 A full-stack debate platform I built using the MERN stack where users can create debate topics, pick a side (Pro or Con), post arguments, vote, and engage in structured discussions. It also has real-time updates via Socket.io, Redis caching, JWT auth, admin moderation, bookmarks and a trending system.
 
