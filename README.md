@@ -370,11 +370,11 @@ npm run preview    # preview the production build locally
 | GET    | `/api/auth/stats`          | Yes   | Get user contribution stats              |
 | PUT    | `/api/auth/avatar`         | Yes   | Upload or update profile avatar          |
 | GET    | `/api/users/leaderboard`   | No    | Get top users by points                  |
-| GET    | `/api/debates`             | No    | List debates with filters and pagination |
-| GET    | `/api/debates/search`      | No    | Full-text search                         |
-| GET    | `/api/debates/trending`    | No    | Get trending debates                     |
+| GET    | `/api/debates`             | Yes   | List debates with filters and pagination |
+| GET    | `/api/debates/search`      | Yes   | Full-text search                         |
+| GET    | `/api/debates/trending`    | Yes   | Get trending debates                     |
 | POST   | `/api/debates`             | Yes   | Create a new debate                      |
-| GET    | `/api/debates/:id`         | No    | Get a single debate with vote counts     |
+| GET    | `/api/debates/:id`         | Yes   | Get a single debate with vote counts     |
 | DELETE | `/api/debates/:id`         | Yes   | Delete debate (creator or admin only)    |
 | POST   | `/api/debates/:id/vote`    | Yes   | Vote Pro or Con — toggle supported       |
 | POST   | `/api/debates/:id/view`    | No    | Increment view count                     |

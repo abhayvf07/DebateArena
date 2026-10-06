@@ -22,6 +22,7 @@ const { errorHandler } = require("./middleware/errorMiddleware");
 const { initSocket } = require("./socket/index");
 
 const app = express();
+app.set("trust proxy", 1);
 const server = http.createServer(app);
 
 // Real-time sockets
@@ -38,16 +39,16 @@ app.use(
   }),
 );
 
-// Sanitization
-app.use(mongoSanitize());
-app.use(xss());
-
 // Request logging
 app.use(morgan(":method :url :status :response-time ms"));
 
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Sanitization
+app.use(mongoSanitize());
+app.use(xss());
 
 // Rate limiters
 const authLimiter = rateLimit({
@@ -67,7 +68,9 @@ const generalLimiter = rateLimit({
 });
 
 // Routes
-app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", generalLimiter, require("./routes/userRoutes"));
 app.use("/api/debates", generalLimiter, require("./routes/debateRoutes"));
 app.use("/api/arguments", generalLimiter, require("./routes/argumentRoutes"));
