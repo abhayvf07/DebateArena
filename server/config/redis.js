@@ -3,13 +3,40 @@ const Redis = require("ioredis");
 
 let client = null;
 
-const rawRedisUrl = process.env.REDIS_URL?.trim().replace(/^['"]|['"]$/g, "");
+const normalizeRedisUrl = () => {
+  const rawRedisUrl = process.env.REDIS_URL?.trim().replace(/^['"]|['"]$/g, "") || "";
+
+  if (!rawRedisUrl) {
+    console.warn("REDIS_URL not set — caching disabled");
+    return null;
+  }
+
+  const looksLikeCliCommand = /^redis-cli\b/i.test(rawRedisUrl) || /\s/.test(rawRedisUrl) && !/^rediss?:\/\//i.test(rawRedisUrl);
+
+  if (looksLikeCliCommand) {
+    console.warn("REDIS_URL is not a valid Redis connection string; caching disabled. Example: redis://localhost:6379 or rediss://user:pass@host:6379");
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(rawRedisUrl);
+    if (!["redis:", "rediss:"].includes(parsedUrl.protocol)) {
+      throw new Error("Unsupported URL scheme");
+    }
+    return rawRedisUrl;
+  } catch (error) {
+    console.warn(`REDIS_URL is invalid: ${error.message}. Caching disabled.`);
+    return null;
+  }
+};
+
+const redisUrl = normalizeRedisUrl();
 
 // Connect if REDIS_URL is set, otherwise skip caching
-if (rawRedisUrl) {
-  const isTls = rawRedisUrl.startsWith("rediss://");
+if (redisUrl) {
+  const isTls = redisUrl.startsWith("rediss://");
 
-  client = new Redis(rawRedisUrl, {
+  client = new Redis(redisUrl, {
     maxRetriesPerRequest: 1,
     enableOfflineQueue: false,
     lazyConnect: true,
@@ -33,8 +60,6 @@ if (rawRedisUrl) {
     console.warn(`Redis connection failed: ${err.message}. Caching disabled.`);
     client = null;
   });
-} else {
-  console.warn("REDIS_URL not set — caching disabled");
 }
 
 // Get cached data by key
